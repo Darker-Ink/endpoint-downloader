@@ -17,6 +17,13 @@ const RequestData = async () => {
 };
 
 const start = async () => {
+    if (!fs.existsSync('./metadata.json')) {
+        fs.writeFileSync('./metadata.json', JSON.stringify({
+            mainBundle: '',
+            urls: ''
+        }));
+    }
+
     const $ = await RequestData();
 
     const scripts = $('body script');
@@ -43,6 +50,9 @@ const start = async () => {
         return;
     }
 
+    console.log(`Main Bundle: ${mainBundle}`);
+    console.log(`URLs: ${urls}`);
+
     const data = fs.readFileSync('./metadata.json');
 
     if (data) {
@@ -67,7 +77,20 @@ const start = async () => {
     }));
 
     await exec('git add currentRoutes.js metadata.json');
-    await exec('git commit -m "New Routes"');
+    await exec('git commit -m "New Endpoints"');
+    await exec('git push origin master');
+
+    await request(config.url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            content: `New endpoint changes detected. Updating..., ${url}${urls}`
+        })
+    });
 };
+
+start();
 
 setInterval(start, interval);
