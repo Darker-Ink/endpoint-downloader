@@ -34,8 +34,8 @@ const start = async () => {
 
     const flipped = srcs.reverse();
 
-    // get the first 8 files
-    const files = flipped.slice(0, 8);
+    // get the first 15 files
+    const files = flipped.slice(0, 15);
 
     const mainBundle = flipped[1]; // main bundle should always be the second file
 
