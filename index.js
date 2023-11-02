@@ -5,11 +5,11 @@ const exec = promisify(require('child_process').exec);
 const cheerio = require('cheerio');
 const config = require('./config.json');
 
-const url = "https://canary.discord.com/login";
+const url = "https://canary.discord.com";
 const interval = 1000 * 60 * 1; // 1 minute
 
 const RequestData = async () => {
-    const { body } = await request(url);
+    const { body } = await request(url + '/login');
     const text = await body.text();
     const $ = cheerio.load(text);
 
@@ -33,10 +33,29 @@ const start = async () => {
     }).get();
 
     const flipped = srcs.reverse();
-    const mainBundle = flipped[1];
-    const urls = flipped[4];
 
-    if (!mainBundle || !urls) {
+    // get the first 8 files
+    const files = flipped.slice(0, 8);
+
+    const mainBundle = flipped[1]; // main bundle should always be the second file
+
+    let urlFile = null;
+
+    const stringToLookFor = "/users/@me"
+
+    for (const file of files) {
+        const { body } = await request(url + file);
+
+        const text = await body.text();
+
+        if (text.includes(stringToLookFor)) {
+            urlFile = file;
+
+            break;
+        }
+    }
+
+    if (!mainBundle || !urlFile) {
         await request(config.url, {
             method: 'POST',
             headers: {
@@ -51,21 +70,21 @@ const start = async () => {
     }
 
     console.log(`Main Bundle: ${mainBundle}`);
-    console.log(`URLs: ${urls}`);
+    console.log(`URLs: ${urlFile}`);
 
     const data = fs.readFileSync('./metadata.json');
 
     if (data) {
         const json = JSON.parse(data);
 
-        if (json.mainBundle === mainBundle && json.urls === urls) {
+        if (json.mainBundle === mainBundle && json.urls === urlFile) {
             console.log('No changes');
 
             return;
         }
     }
 
-    const jsDownload = await request(`https://canary.discord.com${urls}`);
+    const jsDownload = await request(url + urlFile);
 
     const js = await jsDownload.body.text();
 
@@ -73,7 +92,7 @@ const start = async () => {
 
     fs.writeFileSync('./metadata.json', JSON.stringify({
         mainBundle,
-        urls
+        urls: urlFile
     }));
 
     await exec('git add currentRoutes.js metadata.json');
@@ -86,7 +105,7 @@ const start = async () => {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            content: `New endpoint changes detected. Updating..., ${url}${urls}`
+            content: `File changed, Updating..., <${url}${urlFile}>`
         })
     });
 };
