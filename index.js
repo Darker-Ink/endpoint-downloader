@@ -8,13 +8,50 @@ const config = require('./config.json');
 const url = "https://canary.discord.com";
 const interval = 1000 * 60 * 1; // 1 minute
 
+const PromiseHandler = async (func) => {
+    try {
+        const finished = await func();
+
+        return [
+            finished,
+            null
+        ]
+    } catch (err) {
+        return [
+            null,
+            err
+        ]
+    }
+}
+
 const RequestData = async () => {
-    const { body } = await request(url + '/login');
+    const [finished, error] = await PromiseHandler(request(url + '/login'));
+    
+    if (error) {
+        console.log(error);
+
+        return RequestData();
+    }
+
+    const body = finished.body;
+
     const text = await body.text();
     const $ = cheerio.load(text);
 
     return $;
 };
+
+const RequestUrl = async (url) => {
+    const [finished, error] = await PromiseHandler(request(url));
+    
+    if (error) {
+        console.log(error);
+
+        return RequestUrl(url);
+    }
+
+    return finished;
+}
 
 const start = async () => {
     if (!fs.existsSync('./metadata.json')) {
@@ -44,7 +81,7 @@ const start = async () => {
     const stringToLookFor = "/users/@me"
 
     for (const file of files) {
-        const { body } = await request(url + file);
+        const { body } = await RequestUrl(url + file);
 
         const text = await body.text();
 
@@ -56,7 +93,7 @@ const start = async () => {
     }
 
     if (!mainBundle || !urlFile) {
-        await request(config.url, {
+        const [, error] = await RequestUrl(request(config.url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -64,7 +101,11 @@ const start = async () => {
             body: JSON.stringify({
                 content: `<@379781622704111626> Failed to get routes.`
             })
-        });
+        }));
+
+        if (error) {
+            console.log(error);
+        }
 
         return;
     }
@@ -84,7 +125,7 @@ const start = async () => {
         }
     }
 
-    const jsDownload = await request(url + urlFile);
+    const jsDownload = await RequestUrl(url + urlFile);
 
     const js = await jsDownload.body.text();
 
@@ -99,7 +140,7 @@ const start = async () => {
     await exec('git commit -m "New Endpoints"');
     await exec('git push origin master');
 
-    await request(config.url, {
+    const [, error]= await PromiseHandler(request(config.url, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -107,7 +148,11 @@ const start = async () => {
         body: JSON.stringify({
             content: `File changed, Updating..., <${url}${urlFile}>`
         })
-    });
+    }));
+
+    if (error) {
+        console.log(error);
+    }
 };
 
 start();
