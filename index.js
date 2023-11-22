@@ -93,7 +93,7 @@ const start = async () => {
     }
 
     if (!mainBundle || !urlFile) {
-        const [, error] = await RequestUrl(request(config.url, {
+        const [, error] = await PromiseHandler(request(config.url, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
