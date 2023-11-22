@@ -10,7 +10,7 @@ const interval = 1000 * 60 * 1; // 1 minute
 
 const PromiseHandler = async (func) => {
     try {
-        const finished = await func();
+        const finished = await func;
 
         return [
             finished,
