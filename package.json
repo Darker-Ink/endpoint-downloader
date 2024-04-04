@@ -1,6 +1,6 @@
 {
   "dependencies": {
     "cheerio": "^1.0.0-rc.12",
-    "undici": "^5.27.0"
+    "undici": "^5.28.4"
   }
 }
