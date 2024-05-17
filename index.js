@@ -9,9 +9,12 @@ const url = "https://canary.discord.com";
 const interval = 1000 * 60 * 1; // 1 minute
 
 const PromiseHandler = async (func) => {
+    // console.log('Got func', func)
     try {
         const finished = await func;
 
+        // console.log('Finished func', func)
+        
         return [
             finished,
             null
@@ -81,8 +84,12 @@ const start = async () => {
     const stringToLookFor = "/users/@me"
 
     for (const file of files) {
+        console.log('Requesting', file);
+
         const { body } = await RequestUrl(url + file);
 
+        console.log('Finished', file)
+        
         const text = await body.text();
 
         if (text.includes(stringToLookFor)) {
@@ -124,6 +131,8 @@ const start = async () => {
             return;
         }
     }
+
+    console.log('Downloading JS', urlFile);
 
     const jsDownload = await RequestUrl(url + urlFile);
 
