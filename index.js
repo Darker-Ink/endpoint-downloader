@@ -81,7 +81,7 @@ const start = async () => {
 
     let urlFile = null;
 
-    const stringToLookFor = "/users/@me"
+    const stringToLookFor = ["/users/@me", "/users/@me/relationships", "users/@me/channels"]
 
     for (const file of files) {
         console.log('Requesting', file);
@@ -92,7 +92,7 @@ const start = async () => {
         
         const text = await body.text();
 
-        if (text.includes(stringToLookFor)) {
+        if (stringToLookFor.every((str) => text.includes(str))) {
             urlFile = file;
 
             break;
