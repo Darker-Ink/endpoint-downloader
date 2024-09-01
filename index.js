@@ -72,18 +72,12 @@ const start = async () => {
         return $(el).attr('src');
     }).get();
 
-    const flipped = srcs.reverse();
-
-    // get the first 15 files
-    const files = flipped.slice(0, 15);
-
-    const mainBundle = flipped[1]; // main bundle should always be the second file
 
     let urlFile = null;
 
     const stringToLookFor = ["/users/@me", "/users/@me/relationships", "users/@me/channels"]
 
-    for (const file of files) {
+    for (const file of srcs) {
         console.log('Requesting', file);
 
         const { body } = await RequestUrl(url + file);
@@ -99,7 +93,7 @@ const start = async () => {
         }
     }
 
-    if (!mainBundle || !urlFile) {
+    if (!urlFile) {
         const [, error] = await PromiseHandler(request(config.url, {
             method: 'POST',
             headers: {
@@ -117,7 +111,6 @@ const start = async () => {
         return;
     }
 
-    console.log(`Main Bundle: ${mainBundle}`);
     console.log(`URLs: ${urlFile}`);
 
     const data = fs.readFileSync('./metadata.json');
@@ -125,7 +118,7 @@ const start = async () => {
     if (data) {
         const json = JSON.parse(data);
 
-        if (json.mainBundle === mainBundle && json.urls === urlFile) {
+        if (json.urls === urlFile) {
             console.log('No changes');
 
             return;
@@ -141,7 +134,6 @@ const start = async () => {
     fs.writeFileSync('./currentRoutes.js', js);
 
     fs.writeFileSync('./metadata.json', JSON.stringify({
-        mainBundle,
         urls: urlFile
     }));
 
